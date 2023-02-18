@@ -1,0 +1,76 @@
+---
+title: ""
+date: "`r Sys.Date()`"
+output:
+  rmdformats::readthedown:
+    highlight: kate
+---
+
+```{r setup, include=FALSE}
+## Global options
+knitr::opts_chunk$set(cache = TRUE)
+```
+
+# **Challenge**
+
+```{r library}
+library(tidyverse)
+library(here)
+```
+
+```{r data_read}
+hiphop <- read_csv(here("Data","hiphop.csv"))
+head(hiphop)
+```
+
+```{r data_clean}
+hiphop1 <- hiphop %>%
+  mutate(numOverallArtists = replace(numOverallArtists, is.na(numOverallArtists), 0)) %>%
+  mutate(numPreferredArtists = replace(numPreferredArtists, is.na(numPreferredArtists), 0)) %>%
+  mutate(sex = factor(sex), ethnic = factor(ethnic))
+
+# Since NA data was more than half the observations, instead of dropping the NA's they were converted to 0's
+```
+
+Use the dataset to suggest a track listing (11 song titles) for Aubrey's next album with the Biebs. Explain your thought process and corresponding code.
+
+```{r track_listing}
+track_listing <- hiphop1 %>%
+  mutate(county1 = cut(county, breaks = c(0,99905,331582,3053793), labels=c('Small', 'Medium', 'Large'))) %>%
+  select(hiphop, bieber, county1, word, familiarity) %>%
+  filter(county1 == 'Large',
+         bieber >= quantile(bieber, 0.5),
+         hiphop >= 3) %>% 
+  group_by(word) %>%
+  summarize(population_appeal = mean(familiarity)) %>%
+  slice_max(order_by = population_appeal, n =12)
+
+track_listing
+
+```
+
+Song Titles:
+
+1.  Feel me
+
+2.  I'm off the hook
+
+3.  Hella Guap
+
+4.  Make it rain
+
+5.  What it do babe?
+
+6.  Finna stay
+
+7.  Ashy Elbows
+
+8.  My boo
+
+9.  Ballin out
+
+10. What it is, What it was!
+
+11. Player Hater
+
+These titles were specifically chosen for the track list as the words in the titles are recognizable to authentic hip hop fans (hiphop \>=3). Moreover, due to the collaboration with Bieber, the target population is Bieber fans with a high interest in hip hop (quantile(bieber, 0.5)). Finally, the county has been set to 'Large' to target high population areas.
